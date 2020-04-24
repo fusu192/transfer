@@ -1,0 +1,9 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_upload
+string flutter_uploader_notification_canceled
+string flutter_uploader_notification_complete
+string flutter_uploader_notification_failed
+string flutter_uploader_notification_in_progress
+string flutter_uploader_notification_started
+xml provider_path
