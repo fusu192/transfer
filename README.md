@@ -10,6 +10,7 @@
 - 打开app，输入电脑IP地址以及端口
 - picture
 ![](https://img2020.cnblogs.com/blog/1011634/202004/1011634-20200424152427591-579242183.png)
+<img src="https://img2020.cnblogs.com/blog/1011634/202004/1011634-20200424152427591-579242183.png" width = "50%" height = "50%" alt="图片名称" />
 
 - 点击连接按钮,连接成功
 - picture手机端
