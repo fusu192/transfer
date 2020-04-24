@@ -94,6 +94,39 @@ public final class R {
     public static final class id {
         private id() {}
 
+        public static final int accessibility_action_clickable_span = 0x7f060000;
+        public static final int accessibility_custom_action_0 = 0x7f060001;
+        public static final int accessibility_custom_action_1 = 0x7f060002;
+        public static final int accessibility_custom_action_10 = 0x7f060003;
+        public static final int accessibility_custom_action_11 = 0x7f060004;
+        public static final int accessibility_custom_action_12 = 0x7f060005;
+        public static final int accessibility_custom_action_13 = 0x7f060006;
+        public static final int accessibility_custom_action_14 = 0x7f060007;
+        public static final int accessibility_custom_action_15 = 0x7f060008;
+        public static final int accessibility_custom_action_16 = 0x7f060009;
+        public static final int accessibility_custom_action_17 = 0x7f06000a;
+        public static final int accessibility_custom_action_18 = 0x7f06000b;
+        public static final int accessibility_custom_action_19 = 0x7f06000c;
+        public static final int accessibility_custom_action_2 = 0x7f06000d;
+        public static final int accessibility_custom_action_20 = 0x7f06000e;
+        public static final int accessibility_custom_action_21 = 0x7f06000f;
+        public static final int accessibility_custom_action_22 = 0x7f060010;
+        public static final int accessibility_custom_action_23 = 0x7f060011;
+        public static final int accessibility_custom_action_24 = 0x7f060012;
+        public static final int accessibility_custom_action_25 = 0x7f060013;
+        public static final int accessibility_custom_action_26 = 0x7f060014;
+        public static final int accessibility_custom_action_27 = 0x7f060015;
+        public static final int accessibility_custom_action_28 = 0x7f060016;
+        public static final int accessibility_custom_action_29 = 0x7f060017;
+        public static final int accessibility_custom_action_3 = 0x7f060018;
+        public static final int accessibility_custom_action_30 = 0x7f060019;
+        public static final int accessibility_custom_action_31 = 0x7f06001a;
+        public static final int accessibility_custom_action_4 = 0x7f06001b;
+        public static final int accessibility_custom_action_5 = 0x7f06001c;
+        public static final int accessibility_custom_action_6 = 0x7f06001d;
+        public static final int accessibility_custom_action_7 = 0x7f06001e;
+        public static final int accessibility_custom_action_8 = 0x7f06001f;
+        public static final int accessibility_custom_action_9 = 0x7f060020;
         public static final int action0 = 0x7f060021;
         public static final int action_container = 0x7f060022;
         public static final int action_divider = 0x7f060023;
@@ -105,6 +138,7 @@ public final class R {
         public static final int bottom = 0x7f06002a;
         public static final int cancel_action = 0x7f06002b;
         public static final int chronometer = 0x7f06002f;
+        public static final int dialog_button = 0x7f060033;
         public static final int end = 0x7f060034;
         public static final int end_padder = 0x7f060035;
         public static final int forever = 0x7f060039;
@@ -126,6 +160,11 @@ public final class R {
         public static final int right_side = 0x7f060049;
         public static final int start = 0x7f06004a;
         public static final int status_bar_latest_event_content = 0x7f06004b;
+        public static final int tag_accessibility_actions = 0x7f06004c;
+        public static final int tag_accessibility_clickable_spans = 0x7f06004d;
+        public static final int tag_accessibility_heading = 0x7f06004e;
+        public static final int tag_accessibility_pane_title = 0x7f06004f;
+        public static final int tag_screen_reader_focusable = 0x7f060050;
         public static final int tag_transition_group = 0x7f060051;
         public static final int tag_unhandled_key_event_manager = 0x7f060052;
         public static final int tag_unhandled_key_listeners = 0x7f060053;
@@ -144,6 +183,7 @@ public final class R {
     public static final class layout {
         private layout() {}
 
+        public static final int custom_dialog = 0x7f080000;
         public static final int notification_action = 0x7f080001;
         public static final int notification_action_tombstone = 0x7f080002;
         public static final int notification_media_action = 0x7f080003;
