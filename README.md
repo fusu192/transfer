@@ -1,6 +1,7 @@
 # flutter_app
 
 手机电脑文件互传工具
+- 手机需要与电脑在同一网段，或电脑IP为公网IP
 
 使用方法: <br> **一.在电脑端运行python_server文件夹里面的server.py文件**
 - picture
