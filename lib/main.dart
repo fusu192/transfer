@@ -22,6 +22,8 @@ import 'package:path/path.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tip_dialog/tip_dialog.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'dart:core';
 
 
 
@@ -30,6 +32,10 @@ void log(msg,{tag= "default_tag"}){
   var now =new DateTime.now();
   print("| (time)->"+now.toString()+" | (tag)->$tag  | (msg)->$msg");
 }
+
+final GlobalKey<NavigatorState> navigatorKey1 = new GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey2 = new GlobalKey<NavigatorState>();
+
 
 const String title = "FileUpload Sample app";
 String uploadURL = 'http://192.168.199.202:5000';
@@ -44,12 +50,46 @@ ProgressDialog pr;
 
 enum MediaType { Image, Video,}
 
+Future<bool> autologin(String uploadURL) async{
+  Response response;
+  BaseOptions options = new BaseOptions(
+    baseUrl: uploadURL,
+    connectTimeout: 5000,
+    receiveTimeout: 3000,
+  );
+  Dio dio = new Dio(options);
+  response = await dio.get("/login", queryParameters: {});
+  if(json.decode(response.toString())["success"]){
+    TipDialogHelper.success("Connect Successfully");
+    Navigator.of(navigatorKey1.currentState.overlay.context).pushAndRemoveUntil(
+        new MaterialPageRoute(builder: (context) => new MyApp()), (route) => route == null
+    );
+    return true;
+  }else{
+    return false;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterDownloader.initialize();
   Future<void> getSDCardDir() async {
     Common().mobile_path=(await getExternalStorageDirectory()).path+ Platform.pathSeparator + 'Download';
     Common().sDCardDir = (await getExternalStorageDirectory()).path+ Platform.pathSeparator + 'Download';
+
+    String controller_ip_text;
+    String controller_port_text;
+
+    SharedPreferences prefs =  await SharedPreferences.getInstance();
+    Set keys = prefs.getKeys();
+    if(keys.isNotEmpty){
+      for (var key in keys) {
+        controller_ip_text=key;
+        controller_port_text = prefs.getString(key);
+      }
+      uploadURL="http://${controller_ip_text}:$controller_port_text";
+      ///autologin(uploadURL);
+    }
   }
   // Permission check
   Future<void> getPermission() async {
@@ -75,10 +115,6 @@ class mainApp extends StatefulWidget {
 }
 
 class _mainAppState extends State<mainApp> {
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +122,11 @@ class _mainAppState extends State<mainApp> {
       debugShowCheckedModeBanner: false,
       home: LoginPage(),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 }
 
@@ -154,117 +195,120 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('建立连接'),
-        centerTitle: true,
-      ),
-      body:Stack(
-        children: <Widget>[
-          Column(
-            children: <Widget>[
-              Container(
-                padding: EdgeInsets.all(16),
-                child: Form(
-                  key: loginKey,
-                  autovalidate: true,
-                  child: Column(
-                    children: <Widget>[
-                      TextFormField(
-                        controller: controller_ip,
-                        decoration: InputDecoration(
-                          ///labelText: 'ip',
-                          hintText: "例: 192.168.99.2",
-                          hintStyle: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                          ///prefixIcon: Icon(Icons.info),
-                        ),
-                        onSaved: (value) {
-                          ip = value;
-                        },
-                        onFieldSubmitted: (value) {},
-                      ),
-                      TextFormField(
-                        controller: controller_port,
-                        decoration: InputDecoration(
-                          ///labelText: 'port',
-                          hintText: '例: 5000',
-                          hintStyle: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                          ///prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: false,
-                        onSaved: (value) {
-                          port = value;
-                        },
-                      )
-                    ],
-                  ),
-                  onChanged: () {
-                    print("onChanged");
-                  },
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: RaisedButton(
-                        padding: EdgeInsets.all(15),
-                        child: Text(
-                          "登录",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        textColor: Colors.white,
-                        color: Theme.of(context).primaryColor,
-                        onPressed: () async {
-                          TipDialogHelper.loading("Loading");
-                          var loginForm = loginKey.currentState;
-                          if (loginForm.validate()) {
-                            loginForm.save();
-                            if(ip=="" && port==""){
-                              TipDialogHelper.dismiss();
-                              Fluttertoast.showToast(msg: '请输入ip以及port！');
-                            }else if(ip=="" && port!=""){
-                              TipDialogHelper.dismiss();
-                              Fluttertoast.showToast(msg: '请输入ip！');
-                            }else if(ip!="" && port==""){
-                              TipDialogHelper.dismiss();
-                              Fluttertoast.showToast(msg: '请输入port！');
-                            }else{
-                              try{
-                                await connect(context,ip, port);
-                              }catch(e){
-                                TipDialogHelper.dismiss();
-                                Fluttertoast.showToast(msg: '连接失败！');
-                              }
-                            }
-                          }
-
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            ],
+    return MaterialApp(
+      navigatorKey: navigatorKey1,
+      home: Scaffold(
+          appBar: AppBar(
+            title: Text('建立连接'),
+            centerTitle: true,
           ),
-          TipDialogContainer(
-              duration: const Duration(seconds: 1),
-              outsideTouchable: true,
-              onOutsideTouch: (Widget tipDialog) {
-                if (tipDialog is TipDialog &&
-                    tipDialog.type == TipDialogType.LOADING) {
-                  TipDialogHelper.dismiss();
-                }
-              })
-        ],
-      )
+          body:Stack(
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    child: Form(
+                      key: loginKey,
+                      autovalidate: true,
+                      child: Column(
+                        children: <Widget>[
+                          TextFormField(
+                            controller: controller_ip,
+                            decoration: InputDecoration(
+                              ///labelText: 'ip',
+                              hintText: "例: 192.168.99.2",
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                              ///prefixIcon: Icon(Icons.info),
+                            ),
+                            onSaved: (value) {
+                              ip = value;
+                            },
+                            onFieldSubmitted: (value) {},
+                          ),
+                          TextFormField(
+                            controller: controller_port,
+                            decoration: InputDecoration(
+                              ///labelText: 'port',
+                              hintText: '例: 5000',
+                              hintStyle: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                              ///prefixIcon: Icon(Icons.lock),
+                            ),
+                            obscureText: false,
+                            onSaved: (value) {
+                              port = value;
+                            },
+                          )
+                        ],
+                      ),
+                      onChanged: () {
+                        log("onChanged");
+                      },
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: RaisedButton(
+                            padding: EdgeInsets.all(15),
+                            child: Text(
+                              "登录",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            textColor: Colors.white,
+                            color: Theme.of(context).primaryColor,
+                            onPressed: () async {
+                              TipDialogHelper.loading("Loading");
+                              var loginForm = loginKey.currentState;
+                              if (loginForm.validate()) {
+                                loginForm.save();
+                                if(ip=="" && port==""){
+                                  TipDialogHelper.dismiss();
+                                  Fluttertoast.showToast(msg: '请输入ip以及port！');
+                                }else if(ip=="" && port!=""){
+                                  TipDialogHelper.dismiss();
+                                  Fluttertoast.showToast(msg: '请输入ip！');
+                                }else if(ip!="" && port==""){
+                                  TipDialogHelper.dismiss();
+                                  Fluttertoast.showToast(msg: '请输入port！');
+                                }else{
+                                  try{
+                                    await connect(context,ip, port);
+                                  }catch(e){
+                                    TipDialogHelper.dismiss();
+                                    Fluttertoast.showToast(msg: '连接失败！');
+                                  }
+                                }
+                              }
+
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+              TipDialogContainer(
+                  duration: const Duration(seconds: 1),
+                  outsideTouchable: true,
+                  onOutsideTouch: (Widget tipDialog) {
+                    if (tipDialog is TipDialog &&
+                        tipDialog.type == TipDialogType.LOADING) {
+                      TipDialogHelper.dismiss();
+                    }
+                  })
+            ],
+          )
+      ),
     );
   }
 }
@@ -274,16 +318,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-
-    return new MaterialApp(
-        title: 'Flutter Demo',
-        theme: new ThemeData(
-          primarySwatch: Colors.blue,
-          fontFamily: 'RobotoMono'
-        ),
-        home:SliverTabDemoPage2(),
-        debugShowCheckedModeBanner: false,
-    );
+    return SliverTabDemoPage2();
   }
 }
 
@@ -323,7 +358,7 @@ Future upload_file(FormData formData, [Function onSendProgress]) async {
 
       tasks[_uploadFilePath]="complete";
       tasks.forEach((key, value) {
-        print('key = $key, value = $value');
+        log('key = $key, value = $value');
       });
     });
   }catch (e) {
@@ -347,6 +382,10 @@ class _SliverTabDemoPageState extends State<SliverTabDemoPage2> with TickerProvi
   final double maxHeight = kToolbarHeight;
   final double minHeight = 30;
   final double tabIconSize = 30;
+
+  StreamSubscription _intentDataStreamSubscription;
+  List<SharedMediaFile> _sharedFiles=null;
+  String _sharedText=null;
 
   List<Widget> renderTabs(double shrinkOffset) {
     double offset = (shrinkOffset > tabIconSize) ? tabIconSize : shrinkOffset;
@@ -393,9 +432,99 @@ class _SliverTabDemoPageState extends State<SliverTabDemoPage2> with TickerProvi
   @override
   void initState() {
     tabController = new TabController(length: tabLength, vsync: this);
+
+    // For sharing images coming from outside the app while the app is in the memory
+    _intentDataStreamSubscription = ReceiveSharingIntent.getMediaStream()
+        .listen((List<SharedMediaFile> value) {
+      _sharedFiles = value;
+      log(_sharedFiles);
+      if(_sharedFiles.isNotEmpty){
+        log("Shared1:" + (_sharedFiles?.map((f) => f.path).join(",") ?? ""));
+        if(_sharedFiles.length>1){
+          Fluttertoast.showToast(msg: '一次只能上传一个文件!');Fluttertoast.showToast(msg: '一次只能上传一个文件!');
+        }else{
+          getShareFilePath(navigatorKey2.currentState.overlay.context,_sharedFiles.first.path);
+          _sharedFiles=[];
+        }
+      }
+    }, onError: (err) {
+      log("getMediaStream error1: $err");
+    });
+
+    // For sharing images coming from outside the app while the app is closed
+    ReceiveSharingIntent.getInitialMedia().then((List<SharedMediaFile> value) {
+      _sharedFiles = value;
+      log(_sharedFiles);
+      if(_sharedFiles.isNotEmpty){
+        log("Shared2:" + (_sharedFiles?.map((f) => f.path).join(",") ?? ""));
+        if(_sharedFiles.length>1){
+          Fluttertoast.showToast(msg: '一次只能上传一个文件!');Fluttertoast.showToast(msg: '一次只能上传一个文件!');
+        }else{
+          getShareFilePath(navigatorKey2.currentState.overlay.context,_sharedFiles.first.path);
+          _sharedFiles=[];
+        }
+      }
+
+    },onError: (err) {
+      log("getInitialMedia error2: $err");
+    });
+
     super.initState();
   }
 
+
+  void getShareFilePath(BuildContext context,String filePath) async {
+    try {
+      log(filePath);
+      if (filePath == null) {
+        return;
+      }
+      pr = new ProgressDialog(context, type: ProgressDialogType.Download);
+      pr.style(
+        message: 'Uploading file...',
+        borderRadius: 10.0,
+        backgroundColor: Colors.white,
+        elevation: 10.0,
+        insetAnimCurve: Curves.easeInOut,
+        progress:0.0,
+        maxProgress: 100.0,
+        progressTextStyle: TextStyle(
+            color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
+        messageTextStyle: TextStyle(
+            color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600),
+      );
+      pr.show();
+      final String savedDir = dirname(filePath);
+      final String filename = basename(filePath);
+
+      setState(() {
+        _uploadFilePath = filePath;
+      });
+
+      log(filename);
+      // 调用上传服务
+      tasks[_uploadFilePath]="running";
+
+      upload_file(
+          FormData.fromMap({
+            "file": await MultipartFile.fromFile(_uploadFilePath, filename: filename)
+          }),
+              (int count, int total) {
+            // 设置上传进度
+            String progress = ((count / total) * 100).toStringAsFixed(2);
+            setState(() {
+              _uploadProgress = progress;
+              if(pr.isShowing()){
+                pr.update(progress: double.parse(progress));
+              }
+            });
+          }
+      );
+    } catch (e) {
+      log("Error while picking the file: " + e.toString());
+      Fluttertoast.showToast(msg: '上传失败！${e.toString()}');
+    }
+  }
 
 
   void getFilePath(BuildContext context) async {
@@ -448,7 +577,7 @@ class _SliverTabDemoPageState extends State<SliverTabDemoPage2> with TickerProvi
           }
       );
     } catch (e) {
-      print("Error while picking the file: " + e.toString());
+      log("Error while picking the file: " + e.toString());
       Fluttertoast.showToast(msg: '上传失败！${e.toString()}');
     }
 
@@ -458,110 +587,119 @@ class _SliverTabDemoPageState extends State<SliverTabDemoPage2> with TickerProvi
   @override
   Widget build(BuildContext context) {
 
-    return Scaffold(
-      appBar: AppBar(
-        title: new Text("文件互传",style: TextStyle(fontFamily: 'RobotoMono'),
+    return new MaterialApp(
+      navigatorKey: navigatorKey2,
+      title: 'Flutter Demo',
+      theme: new ThemeData(
+          primarySwatch: Colors.blue,
+          fontFamily: 'RobotoMono'
+      ),
+      home:Scaffold(
+        appBar: AppBar(
+          title: new Text("文件互传",style: TextStyle(fontFamily: 'RobotoMono'),
 
-        ),
-        centerTitle: true,
-        leading: _visible?IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            setState(() {
-              _visible = !_visible;
-            });
-          },
-        ):SizedBox(),
-        actions: <Widget>[
-          1==0?IconButton(
-            icon: Icon(Icons.file_upload),
+          ),
+          centerTitle: true,
+          leading: _visible?IconButton(
+            icon: Icon(Icons.arrow_back),
             onPressed: () {
               setState(() {
                 _visible = !_visible;
               });
             },
           ):SizedBox(),
-          cur_index==0?IconButton(
-            tooltip: "选择要上传的文件！",
-            icon: Icon(Icons.add),
-            onPressed: () {
-              getFilePath(context);
-            },
-          ):SizedBox(),
-        ],
-      ),
-      body: NestedScrollView(
-        controller: scrollController,
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return <Widget>[
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverPersistentHeader(
-                pinned: true,
-                delegate: GSYSliverHeaderDelegate(
-                    maxHeight: maxHeight,
-                    minHeight: minHeight,
-                    changeSize: true,
-                    snapConfig: FloatingHeaderSnapConfiguration(
-                      vsync: this,
-                      curve: Curves.bounceInOut,
-                      duration: const Duration(milliseconds: 10),
-                    ),
-                    builder: (BuildContext context, double shrinkOffset, bool overlapsContent) {
-                      return Container(
-                        height: maxHeight,
-                        color: Colors.blue,
-                        child: TabBar(
-                          controller: tabController,
-                          indicatorColor: Colors.cyanAccent,
-                          unselectedLabelColor: Colors.white.withAlpha(100),
-                          labelColor: Colors.cyanAccent,
-                          tabs: renderTabs(shrinkOffset),
-                          onTap: (index) {
-                            print(index);
-                            setState(() {});
-                            scrollController.animateTo(0,
-                                duration: Duration(milliseconds: 100),
-                                curve: Curves.fastOutSlowIn);
-                            pageController.jumpToPage(index);
-                          },
-                        ),
-                      );
-                    }
+          actions: <Widget>[
+            1==0?IconButton(
+              icon: Icon(Icons.file_upload),
+              onPressed: () {
+                setState(() {
+                  _visible = !_visible;
+                });
+              },
+            ):SizedBox(),
+            cur_index==0?IconButton(
+              tooltip: "选择要上传的文件！",
+              icon: Icon(Icons.add),
+              onPressed: () {
+                getFilePath(context);
+              },
+            ):SizedBox(),
+          ],
+        ),
+        body: NestedScrollView(
+          controller: scrollController,
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return <Widget>[
+              SliverOverlapAbsorber(
+                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: SliverPersistentHeader(
+                  pinned: true,
+                  delegate: GSYSliverHeaderDelegate(
+                      maxHeight: maxHeight,
+                      minHeight: minHeight,
+                      changeSize: true,
+                      snapConfig: FloatingHeaderSnapConfiguration(
+                        vsync: this,
+                        curve: Curves.bounceInOut,
+                        duration: const Duration(milliseconds: 10),
+                      ),
+                      builder: (BuildContext context, double shrinkOffset, bool overlapsContent) {
+                        return Container(
+                          height: maxHeight,
+                          color: Colors.blue,
+                          child: TabBar(
+                            controller: tabController,
+                            indicatorColor: Colors.cyanAccent,
+                            unselectedLabelColor: Colors.white.withAlpha(100),
+                            labelColor: Colors.cyanAccent,
+                            tabs: renderTabs(shrinkOffset),
+                            onTap: (index) {
+                              log(index);
+                              setState(() {});
+                              scrollController.animateTo(0,
+                                  duration: Duration(milliseconds: 100),
+                                  curve: Curves.fastOutSlowIn);
+                              pageController.jumpToPage(index);
+                            },
+                          ),
+                        );
+                      }
+                  ),
                 ),
-              ),
-            )
-          ];
-        },
-        body: PageView(
-          onPageChanged: (index) {
-            setState(() {
-              _visible=false;
-              cur_index=index;
-            });
-            tabController.animateTo(index);
+              )
+            ];
           },
-          controller: pageController,
-          children: List.generate(tabLength, (index) {
-            return _visible?Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Text('文件路径：$_uploadFilePath'),
-                  Text('上传进度：$_uploadProgress')
-                ],
-              ),
-            ):(index==0)
-                ?FileManager()
-                : MyHomePage(
-                  burl:uploadURL ,
-                  title: 'Downloader',
-                  platform: Theme.of(context).platform,
+          body: PageView(
+            onPageChanged: (index) {
+              setState(() {
+                _visible=false;
+                cur_index=index;
+              });
+              tabController.animateTo(index);
+            },
+            controller: pageController,
+            children: List.generate(tabLength, (index) {
+              return _visible?Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Text('文件路径：$_uploadFilePath'),
+                    Text('上传进度：$_uploadProgress')
+                  ],
+                ),
+              ):(index==0)
+                  ?FileManager()
+                  : MyHomePage(
+                burl:uploadURL ,
+                title: 'Downloader',
+                platform: Theme.of(context).platform,
               );
-          }),
+            }),
+          ),
         ),
       ),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -632,6 +770,7 @@ class _FileManagerState extends State<FileManager> {
     super.initState();
     parentDir = Directory(Common().sDCardDir);
     initPathFiles(Common().sDCardDir);
+
   }
 
 
@@ -994,7 +1133,7 @@ class _FileManagerState extends State<FileManager> {
           }
       );
     } catch (e) {
-      print("Error while picking the file: " + e.toString());
+      log("Error while picking the file: " + e.toString());
       Fluttertoast.showToast(msg: '上传失败！${e.toString()}');
     }
   }

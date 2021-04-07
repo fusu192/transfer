@@ -3,6 +3,6 @@
 3    package="com.bluechilli.flutteruploader" >
 4
 5    <uses-sdk android:minSdkVersion="16" />
-5-->/Users/macname/.pub-cache/hosted/pub.dartlang.org/flutter_uploader-1.2.0/android/src/main/AndroidManifest.xml
+5-->/Users/macname/.pub-cache/hosted/pub.flutter-io.cn/flutter_uploader-1.2.0/android/src/main/AndroidManifest.xml
 6
 7</manifest>

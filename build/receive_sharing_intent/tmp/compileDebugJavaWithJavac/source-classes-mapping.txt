@@ -1,0 +1,2 @@
+com/kasem/receive_sharing_intent/BuildConfig.java
+ com.kasem.receive_sharing_intent.BuildConfig
